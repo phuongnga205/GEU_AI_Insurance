@@ -45,31 +45,8 @@ Huấn luyện mô hình segmentation để nhận diện chính xác vùng hư 
   - Optimizer: Adam
   - Learning rate: 1e-4
   - Scheduler: ReduceLROnPlateau
-  - Epochs: 50
+  - Epochs: 2
   - Batch size: 8 (tuỳ cấu hình GPU)
-
----
-
-## 4. 📈 Kết quả huấn luyện
-
-| Epoch | Loss (val) | IoU (%) | Dice (%) | Accuracy (%) |
-|-------|------------|---------|----------|---------------|
-| 10    | 0.432      | 65.3    | 78.1     | 91.7          |
-| 20    | 0.281      | 73.8    | 83.5     | 94.2          |
-| 30    | 0.219      | 78.2    | 87.0     | 95.6          |
-| 40    | 0.182      | 80.1    | 88.9     | 96.1          |
-| 50    | 0.169      | 81.3    | 89.7     | 96.5          |
-
-> ✅ Best model saved at epoch 50 — IoU: 81.3%, Dice: 89.7%
-
----
-
-## 5. 📊 Metrics sử dụng
-
-- ✅ Accuracy: phần trăm pixel phân loại đúng.
-- ✅ IoU (Intersection over Union): độ giao giữa mask dự đoán và mask thật.
-- ✅ Dice Coefficient: hài hòa precision và recall.
-- ⏱️ Thời gian train: ~25 phút trên GPU RTX 3060 (VRAM 12GB).
 
 ---
 
@@ -79,8 +56,4 @@ Huấn luyện mô hình segmentation để nhận diện chính xác vùng hư 
   ```python
   torch.save(model.state_dict(), 'models/checkpoints/unet_best.pth')
   ```
-
-- Kiểm tra lại trên tập test (`test_loader.py`) đạt kết quả:
-  - IoU trung bình: 81.0%
-  - Dice: 89.5%
-  - Accuracy: 96.3%
+- Được lưu trên link https://drive.google.com/drive/folders/19Ic_gaaYdSDZoAg59JTNoCQVPqU2ANvQ 
