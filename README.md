@@ -1,6 +1,6 @@
 # GEU\_AI\_Insurance 🚗🔧
 
-## 🧑‍💼 Author Information
+## 👩‍💼 Author Information
 
 - **University**: University of Information Technology – Vietnam National University, Ho Chi Minh City
 - **Student ID**: 23520992
