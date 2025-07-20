@@ -77,16 +77,16 @@ def main():
 
     # Dataset & DataLoader
     train_ds = CarDamageDataset(
-        img_dir    = args.img_dir,
-        anno_dir   = args.anno_dir,
-        split_file = os.path.join(args.split_dir, "train.txt"),
-        transform  = tf
+    img_dir    = "sample_car_damage",
+    anno_dir   = "annotations",
+    split_file = os.path.join(args.split_dir, "train.txt"),
+    transform  = tf
     )
     val_ds = CarDamageDataset(
-        img_dir    = args.img_dir,
-        anno_dir   = args.anno_dir,
-        split_file = os.path.join(args.split_dir, "val.txt"),
-        transform  = tf
+    img_dir    = "sample_car_damage",
+    anno_dir   = "annotations",
+    split_file = os.path.join(args.split_dir, "val.txt"),
+    transform  = tf
     )
 
     train_loader = DataLoader(
