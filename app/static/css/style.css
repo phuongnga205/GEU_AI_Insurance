@@ -1,5 +1,4 @@
 :root {
-  /* Chiều cao mặc định cho cả Upload-card và History-section */
   --card-height: 350px;
 }
 
@@ -41,8 +40,6 @@ h1 {
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   margin-bottom: 2rem;
   z-index: 2;
-
-  /* Đảm bảo upload-card cao ít nhất bằng biến */
   min-height: var(--card-height);
 }
 #drop-area {
@@ -163,11 +160,7 @@ h1 {
   box-shadow: 0 8px 20px rgba(0,0,0,0.15);
   margin-bottom: 2rem;
   z-index: 2;
-
-  /* Cho history-section cao ít nhất bằng biến */
   min-height: var(--card-height);
-
-  /* Duy trì scroll dọc khi nội dung vượt */
   overflow-y: auto;
 }
 .history-section h3 {
