@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Upload History</title>
+</head>
+<body>
+  <h2>History of Uploads</h2>
+  <table border="1" cellpadding="5">
+    <tr><th>File Name</th><th>Damage %</th><th>Severity</th><th>Time</th></tr>
+    {% for row in items %}
+      <tr>
+        <td>{{ row[0] }}</td>
+        <td>{{ row[1] }}%</td>
+        <td>{{ row[2] }}</td>
+        <td>{{ row[3] }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
