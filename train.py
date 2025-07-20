@@ -1,130 +1,144 @@
+#!/usr/bin/env python
+# train.py
+
 import os
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision.models.segmentation import deeplabv3_resnet101
-import torchvision.transforms as T
+import argparse
 from tqdm import tqdm
 
-from dataset import CarDamageDataset  # lớp Dataset bạn đã tự viết
+import torch
+from torch.utils.data import DataLoader
 
-def get_transforms():
-    # Transform cho ảnh: resize, to_tensor, normalize
-    img_tf = T.Compose([
-        T.Resize((520, 520)),
+import torchvision.transforms as T
+from torchvision.models.segmentation import deeplabv3_resnet101
+
+from dataset import CarDamageDataset  # class của bạn trong dataset.py
+
+
+def get_args():
+    p = argparse.ArgumentParser(description="Train Car Damage Segmentation")
+    p.add_argument("--split_dir",    type=str,   default="backend/splits",
+                   help="Folder chứa train.txt, val.txt")
+    p.add_argument("--output_dir",   type=str,   default="backend/models",
+                   help="Nơi lưu checkpoint")
+    p.add_argument("--resume",       type=str,   default=None,
+                   help="(Optional) đường dẫn checkpoint .pth để resume training")
+    p.add_argument("--epochs",       type=int,   default=20,
+                   help="Số epoch tối đa")
+    p.add_argument("--batch_size",   type=int,   default=8,
+                   help="Batch size")
+    p.add_argument("--lr",           type=float, default=1e-4,
+                   help="Learning rate")
+    p.add_argument("--workers",      type=int,   default=4,
+                   help="Số workers cho DataLoader")
+    p.add_argument("--resize",       type=int,   default=512,
+                   help="Kích thước resize ảnh (vuông)")
+    p.add_argument("--early_stop",   type=int,   default=5,
+                   help="Dừng sớm sau N epoch không cải thiện val loss")
+    return p.parse_args()
+
+
+def build_transforms(resize):
+    return T.Compose([
+        T.Resize((resize, resize)),
         T.ToTensor(),
-        T.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225]),
     ])
-    # Transform cho mask: resize nearest, to_tensor
-    mask_tf = T.Compose([
-        T.Resize((520, 520), interpolation=T.InterpolationMode.NEAREST),
-        T.ToTensor(),   # sẽ ra float [0,1]
-    ])
-    return img_tf, mask_tf
 
-def train_one_epoch(model, loader, optimizer, criterion, device):
+
+def train_one_epoch(model, loader, optimizer, device):
     model.train()
-    running_loss = 0.0
-    for images, masks in tqdm(loader, desc="  Training", leave=False):
-        images = images.to(device)      # [B,3,520,520]
-        masks  = masks.to(device)       # [B,1,520,520]
-
+    total_loss = 0.0
+    for images, masks in tqdm(loader, desc="Training", leave=False):
+        images, masks = images.to(device), masks.to(device)
         optimizer.zero_grad()
-        outputs = model(images)['out']  # [B,1,520,520]
-        loss = criterion(outputs, masks)
+        outputs = model(images)["out"]
+        loss = torch.nn.functional.cross_entropy(outputs, masks)
         loss.backward()
         optimizer.step()
+        total_loss += loss.item() * images.size(0)
+    return total_loss / len(loader.dataset)
 
-        running_loss += loss.item() * images.size(0)
-    return running_loss / len(loader.dataset)
 
-def validate(model, loader, criterion, device):
+def validate(model, loader, device):
     model.eval()
-    running_loss = 0.0
+    total_loss = 0.0
     with torch.no_grad():
-        for images, masks in tqdm(loader, desc="  Validating", leave=False):
-            images = images.to(device)
-            masks  = masks.to(device)
-            outputs = model(images)['out']
-            loss = criterion(outputs, masks)
-            running_loss += loss.item() * images.size(0)
-    return running_loss / len(loader.dataset)
+        for images, masks in tqdm(loader, desc="Validating", leave=False):
+            images, masks = images.to(device), masks.to(device)
+            outputs = model(images)["out"]
+            loss = torch.nn.functional.cross_entropy(outputs, masks)
+            total_loss += loss.item() * images.size(0)
+    return total_loss / len(loader.dataset)
+
 
 def main():
+    args = get_args()
+    os.makedirs(args.output_dir, exist_ok=True)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    use_cuda = device.type == "cuda"
+    print(f"Using device: {device}")
 
-    # 1) Đọc danh sách tên file từ train.txt, val.txt
-    with open("train.txt") as f:
-        train_names = [l.strip() for l in f if l.strip()]
-    with open("val.txt") as f:
-        val_names   = [l.strip() for l in f if l.strip()]
+    # Transforms
+    transforms = build_transforms(args.resize)
 
-    # 2) Transforms
-    img_tf, mask_tf = get_transforms()
-
-    # 3) Khởi tạo dataset
+    # Datasets & DataLoaders
     train_ds = CarDamageDataset(
-        img_dir="sample_car_damage",
-        mask_dir="annotations",
-        names_list=train_names,
-        img_transform=img_tf,
-        mask_transform=mask_tf
+        img_txt=os.path.join(args.split_dir, "train.txt"),
+        val=False, transform=transforms
     )
     val_ds = CarDamageDataset(
-        img_dir="sample_car_damage",
-        mask_dir="annotations",
-        names_list=val_names,
-        img_transform=img_tf,
-        mask_transform=mask_tf
+        img_txt=os.path.join(args.split_dir, "val.txt"),
+        val=True, transform=transforms
     )
 
-    # 4) DataLoader: thêm drop_last=True để bỏ batch cuối thiếu mẫu
     train_loader = DataLoader(
-        train_ds,
-        batch_size=4,
-        shuffle=True,
-        num_workers=0,
-        pin_memory=use_cuda,
-        drop_last=True      # ← đây
+        train_ds, batch_size=args.batch_size, shuffle=True,
+        num_workers=args.workers, pin_memory=True
     )
     val_loader = DataLoader(
-        val_ds,
-        batch_size=4,
-        shuffle=False,
-        num_workers=0,
-        pin_memory=use_cuda,
-        drop_last=False     # val có thể giữ False
+        val_ds, batch_size=args.batch_size, shuffle=False,
+        num_workers=args.workers, pin_memory=True
     )
 
-    # 5) Model, criterion, optimizer
-    model = deeplabv3_resnet101(pretrained=True)
-    # thay head classifier thành 1 channel (damage vs background)
-    model.classifier[4] = nn.Conv2d(256, 1, kernel_size=1)
+    # Model: DeepLabV3 + ResNet101, binary segmentation
+    model = deeplabv3_resnet101(pretrained=True, num_classes=1)
     model.to(device)
 
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
+    # Resume from checkpoint nếu có
+    if args.resume:
+        print(f"→ Resuming from checkpoint: {args.resume}")
+        ckpt = torch.load(args.resume, map_location=device)
+        model.load_state_dict(ckpt)
 
-    # 6) Training loop
-    best_val_loss = float("inf")
-    os.makedirs("checkpoints", exist_ok=True)
+    # Optimizer
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    for epoch in range(1, 11):
-        print(f"\nEpoch {epoch}/10")
-        tr_loss  = train_one_epoch(model, train_loader, optimizer, criterion, device)
-        val_loss = validate(model, val_loader, criterion, device)
+    best_val = float("inf")
+    epochs_no_improve = 0
+
+    for epoch in range(1, args.epochs + 1):
+        print(f"\nEpoch {epoch}/{args.epochs}")
+        tr_loss = train_one_epoch(model, train_loader, optimizer, device)
+        val_loss = validate(model, val_loader, device)
         print(f"  Train Loss: {tr_loss:.4f} | Val Loss: {val_loss:.4f}")
 
-        # Lưu model nếu val_loss giảm
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            ckpt_path = f"checkpoints/best_epoch{epoch}.pth"
-            torch.save(model.state_dict(), ckpt_path)
-            print(f"  → Saved best model to {ckpt_path}")
+        # Nếu val_loss cải thiện thì lưu checkpoint
+        if val_loss < best_val:
+            best_val = val_loss
+            epochs_no_improve = 0
+            best_path = os.path.join(args.output_dir, "best.pth")
+            torch.save(model.state_dict(), best_path)
+            print(f"→ Saved best model to {best_path}")
+        else:
+            epochs_no_improve += 1
+            if epochs_no_improve >= args.early_stop:
+                print(f"No improvement for {args.early_stop} epochs, stopping.")
+                break
 
-    print("Training complete.")
+    # Luôn lưu checkpoint cuối cùng
+    last_path = os.path.join(args.output_dir, "last.pth")
+    torch.save(model.state_dict(), last_path)
+    print(f"Training completed. Last model saved to {last_path}")
+
 
 if __name__ == "__main__":
     main()
