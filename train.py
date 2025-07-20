@@ -72,17 +72,18 @@ def main():
 
     tf = build_transforms(args.resize)
 
+    # Thay vì dùng keyword, dùng positional args:
     train_ds = CarDamageDataset(
-        img_dir    = "sample_car_damage",
-        anno_dir   = "annotations",
-        split_file = os.path.join(args.split_dir, "train.txt"),
-        transform  = tf
+        "sample_car_damage",                              # img_dir
+        "annotations",                                    # anno_dir
+        os.path.join(args.split_dir, "train.txt"),       # split_file
+        tf                                                # transform
     )
     val_ds = CarDamageDataset(
-        img_dir    = "sample_car_damage",
-        anno_dir   = "annotations",
-        split_file = os.path.join(args.split_dir, "val.txt"),
-        transform  = tf
+        "sample_car_damage",
+        "annotations",
+        os.path.join(args.split_dir, "val.txt"),
+        tf
     )
 
     train_loader = DataLoader(
