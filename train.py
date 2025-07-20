@@ -8,17 +8,15 @@ from torch.utils.data import DataLoader
 import torchvision.transforms as T
 from torchvision.models.segmentation import deeplabv3_resnet101
 
-from dataset import CarDamageDataset
+from dataset import CarDamageDataset  # class cũ nhận img_txt, val, transform
 
 
 def get_args():
-    p = argparse.ArgumentParser("Train Car Damage Segmentation")
+    p = argparse.ArgumentParser("Train CarDamageSeg (original)")
     p.add_argument("--split_dir",  type=str, default="backend/splits",
-                   help="Folder chứa train.txt và val.txt")
+                   help="Folder chứa train.txt, val.txt")
     p.add_argument("--output_dir", type=str, default="backend/models",
                    help="Nơi lưu checkpoint")
-    p.add_argument("--resume",     type=str, default=None,
-                   help="Đường dẫn .pth để resume training (tuỳ chọn)")
     p.add_argument("--epochs",     type=int,   default=20)
     p.add_argument("--batch_size", type=int,   default=8)
     p.add_argument("--lr",         type=float, default=1e-4)
@@ -35,32 +33,30 @@ def build_transforms(resize):
     ])
 
 
-def train_one_epoch(model, loader, optimizer, device):
+def train_one_epoch(model, loader, opt, device):
     model.train()
-    total_loss = 0.0
+    total = 0.0
     for imgs, masks in tqdm(loader, desc="Train", leave=False):
-        imgs = imgs.to(device)
-        masks = masks.squeeze(1).to(device)
-        optimizer.zero_grad()
-        outputs = model(imgs)["out"]
-        loss = torch.nn.functional.cross_entropy(outputs, masks)
+        imgs, masks = imgs.to(device), masks.squeeze(1).to(device)
+        opt.zero_grad()
+        out = model(imgs)["out"]
+        loss = torch.nn.functional.cross_entropy(out, masks)
         loss.backward()
-        optimizer.step()
-        total_loss += loss.item() * imgs.size(0)
-    return total_loss / len(loader.dataset)
+        opt.step()
+        total += loss.item() * imgs.size(0)
+    return total / len(loader.dataset)
 
 
 def validate(model, loader, device):
     model.eval()
-    total_loss = 0.0
+    total = 0.0
     with torch.no_grad():
         for imgs, masks in tqdm(loader, desc="Val", leave=False):
-            imgs = imgs.to(device)
-            masks = masks.squeeze(1).to(device)
-            outputs = model(imgs)["out"]
-            loss = torch.nn.functional.cross_entropy(outputs, masks)
-            total_loss += loss.item() * imgs.size(0)
-    return total_loss / len(loader.dataset)
+            imgs, masks = imgs.to(device), masks.squeeze(1).to(device)
+            out = model(imgs)["out"]
+            loss = torch.nn.functional.cross_entropy(out, masks)
+            total += loss.item() * imgs.size(0)
+    return total / len(loader.dataset)
 
 
 def main():
@@ -72,18 +68,16 @@ def main():
 
     tf = build_transforms(args.resize)
 
-    # Thay vì dùng keyword, dùng positional args:
+    # **Dùng signature cũ của CarDamageDataset(img_txt, val, transform)**
     train_ds = CarDamageDataset(
-        "sample_car_damage",                              # img_dir
-        "annotations",                                    # anno_dir
-        os.path.join(args.split_dir, "train.txt"),       # split_file
-        tf                                                # transform
+        img_txt = os.path.join(args.split_dir, "train.txt"),
+        val     = False,
+        transform = tf
     )
     val_ds = CarDamageDataset(
-        "sample_car_damage",
-        "annotations",
-        os.path.join(args.split_dir, "val.txt"),
-        tf
+        img_txt = os.path.join(args.split_dir, "val.txt"),
+        val     = True,
+        transform = tf
     )
 
     train_loader = DataLoader(
@@ -98,15 +92,9 @@ def main():
     model = deeplabv3_resnet101(pretrained=True, num_classes=1)
     model.to(device)
 
-    if args.resume:
-        print("Resuming from", args.resume)
-        state = torch.load(args.resume, map_location=device)
-        model.load_state_dict(state)
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-
-    best_val = float('inf')
-    no_imp = 0
+    optimizer   = torch.optim.Adam(model.parameters(), lr=args.lr)
+    best_val    = float("inf")
+    no_improve  = 0
 
     for epoch in range(1, args.epochs+1):
         print(f"\nEpoch {epoch}/{args.epochs}")
@@ -115,20 +103,20 @@ def main():
         print(f" Train Loss: {tr_loss:.4f} | Val Loss: {v_loss:.4f}")
 
         if v_loss < best_val:
-            best_val = v_loss
-            no_imp = 0
+            best_val   = v_loss
+            no_improve = 0
             ckpt = os.path.join(args.output_dir, "best.pth")
             torch.save(model.state_dict(), ckpt)
             print(" Saved best", ckpt)
         else:
-            no_imp += 1
-            if no_imp >= args.early_stop:
-                print(f"No improvement for {args.early_stop} epochs → early stop")
+            no_improve += 1
+            if no_improve >= args.early_stop:
+                print(f"Early stopping at epoch {epoch}")
                 break
 
     last_ckpt = os.path.join(args.output_dir, "last.pth")
     torch.save(model.state_dict(), last_ckpt)
-    print("Training done. Last model:", last_ckpt)
+    print("Training complete. Last model saved to", last_ckpt)
 
 
 if __name__ == "__main__":
