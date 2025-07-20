@@ -1,1 +1,9 @@
-ECHO is on.
+torch>=1.8
+torchvision>=0.9
+numpy
+opencv-python
+matplotlib
+pandas
+flask
+Pillow
+labelme
