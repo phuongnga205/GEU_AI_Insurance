@@ -7,13 +7,11 @@ import numpy as np
 import torch
 from torchvision import models, transforms
 
-# ─── ĐỊNH NGHĨA ĐƯỜNG DẪN ────────────────────────────────────────────────────────
 BASEDIR = os.path.dirname(__file__)  # .../GEU_AI_Insurance_2/app/web
 PROJECT_ROOT = os.path.abspath(os.path.join(BASEDIR, '..', '..'))  # .../GEU_AI_Insurance_2
 MODEL_PATH = os.path.join(PROJECT_ROOT, 'backend', 'models', 'best_epoch2.pth')
 print(f">> Loading checkpoint from {MODEL_PATH!r}, exists: {os.path.exists(MODEL_PATH)}")
 
-# ─── CẤU HÌNH FLASK & THƯ MỤC ───────────────────────────────────────────────────
 UPLOAD_FOLDER = 'static/uploads/'
 RESULT_FOLDER = 'static/results/'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
@@ -26,7 +24,6 @@ app.config['RESULT_FOLDER'] = RESULT_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
 
-# ─── HÀM HỖ TRỢ ─────────────────────────────────────────────────────────────────
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -75,26 +72,21 @@ def upload_file():
     if not f or f.filename == '' or not allowed_file(f.filename):
         return redirect(url_for('index'))
 
-    # 1) Lưu ảnh gốc
     fn = secure_filename(f.filename)
     in_path = os.path.join(app.config['UPLOAD_FOLDER'], fn)
     f.save(in_path)
 
-    # 2) Tạo mask B/W
     pil = Image.open(in_path).convert('RGB')
     mask_img = infer_mask(pil)
 
-    # 3) Lưu mask vào RESULT_FOLDER
     base, ext = fn.rsplit('.', 1)
     mask_name = f"{base}_mask.{ext}"
     mask_path = os.path.join(app.config['RESULT_FOLDER'], mask_name)
     mask_img.save(mask_path)
 
-    # 4) Tính % và mức độ
     pct = calculate_damage_percent(mask_path)
     lvl = damage_level(pct)
 
-    # 5) Lấy lại history và render
     history = sorted(os.listdir(app.config['UPLOAD_FOLDER']), reverse=True)
     return render_template('index.html',
                            original_image=fn,
@@ -111,7 +103,6 @@ def delete_file(filename):
             os.remove(p)
     return redirect(url_for('index'))
 
-# ─── SERVE STATIC FILES (nếu cần) ───────────────────────────────────────────────
 @app.route('/static/uploads/<filename>')
 def serve_upload(filename):
     return send_file(os.path.join(UPLOAD_FOLDER, filename))
@@ -120,6 +111,5 @@ def serve_upload(filename):
 def serve_result(filename):
     return send_file(os.path.join(RESULT_FOLDER, filename))
 
-# ─── MAIN ───────────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)
