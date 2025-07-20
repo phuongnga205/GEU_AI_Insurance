@@ -1,72 +1,70 @@
 # GEU\_AI\_Insurance 🚗🔧
 
-## 👩‍💼 Author Information
+## 👩‍💼 Thông tin tác giả
 
-- **University**: University of Information Technology – Vietnam National University, Ho Chi Minh City
-- **Student ID**: 23520992
-- **Full Name**: Le Ngoc Phuong Nga
+- **Trường**: Đại học Công nghệ Thông tin – ĐHQG TP.HCM
+- **MSSV**: 23520992
+- **Họ tên**: Lê Ngọc Phương Nga
 
-## 🌟 Project Overview
+## 🌟 Tổng quan dự án
 
-GEU\_AI\_Insurance is a deep learning-driven AI system designed to detect and segment damaged regions on vehicles from images. Additionally, the system estimates damage costs and provides a web interface for users to upload car images and view prediction results in real time.
+GEU\_AI\_Insurance là một hệ thống trí tuệ nhân tạo ứng dụng học sâu (Deep Learning) để phát hiện và phân vùng (segmentation) vùng bị hư hại trên xe ô tô từ hình ảnh. Ngoài ra, hệ thống còn có chức năng ước tính tổn thất (damage cost estimation) và cung cấp nền tảng để triển khai một giao diện web giúp người dùng tải ảnh và xem kết quả dự đoán trực quan.
 
-## 🔍 Main Features
+## 🔍 Các chức năng chính
 
-- Train a segmentation model to identify damaged areas on cars.
-- Visualize predicted damage regions overlayed on original images.
-- Estimate damage cost based on the proportion of damaged area.
-- Offer a simple web interface for image upload and result display (currently under development).
+- Huấn luyện mô hình nhận diện và phân vùng tổn thất từ ảnh xe.
+- Hiển thị trực quan vùng hư hại dự đoán.
+- Hỗ trợ ước tính tổn thất dựa trên tỷ lệ vùng hư hại.
+- Cung cấp giao diện web đơn giản để người dùng tải ảnh và nhận kết quả (đang triển khai).
 
-## ⚙️ Technologies Used
+## ⚙️ Công nghệ sử dụng
 
 ### 🧠 Backend - AI & Deep Learning
 
 - **Python 3.8+**
-- **PyTorch**: Primary framework for building and training the segmentation model.
-  - *Why PyTorch?* Flexible API and strong community support.
-- **OpenCV**: Image preprocessing and display utilities.
-- **NumPy**: Efficient numerical data manipulation.
-- **Matplotlib**: Visualizing segmentation outputs.
+- **PyTorch**: Framework chính để xây dựng và huấn luyện mô hình segmentation.
+  - Lý do chọn: Dễ tùy biến và phổ biến trong cộng đồng ML.
+- **OpenCV**: Tiền xử lý và hiển thị hình ảnh.
+- **NumPy**: Xử lý dữ liệu hiệu quả.
+- **Matplotlib**: Trực quan hóa kết quả segmentation.
 
-### 🌐 Frontend - Web Interface (Upcoming)
+### 🌐 Frontend - Giao diện web (sẽ triển khai)
 
-- **HTML5/CSS3** with Jinja2 templates: Create a lightweight, responsive UI for image upload.
-- **Flask**: Lightweight Python web framework to serve the ML model via API.
-  - *Why Flask?* Rapid development of MVPs and easy ML integration.
+- **HTML/CSS** (Jinja2 templates): Tạo giao diện đơn giản cho người dùng tải ảnh.
+- **Flask**: Web framework lightweight, dễ tích hợp mô hình ML vào API backend.
+  - Lý do chọn: Nhẹ, dễ triển khai, nhanh chóng xây dựng MVP (Minimum Viable Product).
 
-## 📁 Project Structure
+## 📁 Cấu trúc thư mục dự án
 
 ```plaintext
 GEU_AI_Insurance/
 ├─ app/
-│  └─ web/                    # Web demo (Flask)
-│     ├─ __init__.py          # Python package initializer
-│     ├─ main.py              # Flask application entry point
-│     ├─ utils.py             # Model loading & image processing functions
-│     ├─ templates/           # HTML templates
-│     │  └─ index.html        # Upload form & result display
-│     └─ static/              # Static assets
-│         ├─ uploads/         # Original user-uploaded images
-│         └─ results/         # Overlayed output images
-├─ sample_car_damage/         # Example car damage images
-├─ annotations/               # LabelMe annotation files
+│  └─ web/                     # Code web demo
+│     ├─ __init__.py           # Python package
+│     ├─ main.py               # Flask app
+│     ├─ utils.py              # Load model & process image
+│     ├─ templates/
+│     │  └─ index.html         # Giao diện upload & kết quả
+│     └─ static/
+│         ├─ uploads/          # Ảnh gốc của người dùng
+│         └─ results/          # Ảnh đã overlay
+├─ sample_car_damage/          # Dữ liệu demo ảnh xe
+├─ annotations/                # File chú thích LabelMe
 ├─ source_code/
-│  ├─ backend/                # Model training and evaluation scripts
-│  └─ frontend/               # Web interface code (Flask)
-├─ models/checkpoints/        # Trained model checkpoints (.pth)
-├─ screenshots/               # Demo screenshots
-├─ train.py                   # Training script for the model
-├─ requirements.txt           # Python dependencies
-├─ README.md                  # Project description and usage guide
-└─ TRAINING.md                # Data processing & training details
+│  ├─ backend/                 # Mã nguồn ML và training
+│  └─ frontend/                # Mã nguồn giao diện web (Flask)
+├─ models/checkpoints/         # Lưu model .pth đã huấn luyện
+├─ screenshots/                # Hình ảnh demo sản phẩm
+├─ train.py                    # Script huấn luyện model
+├─ requirements.txt            # Dependencies
+├─ README.md                   # Hướng dẫn sử dụng & mô tả dự án
+└─ TRAINING.md                 # Mô tả pipeline và metrics
 ```
 
-## 📞 Contact
+## 📞 Liên hệ
 
-- **GitHub**: [https://github.com/phuongnga205/GEU\_AI\_Insurance](https://github.com/phuongnga205/GEU_AI_Insurance)
-- **Email**: [23520992@gm.uit.edu.vn](mailto:23520992@gm.uit.edu.vn)
+Nếu bạn cần hỗ trợ hoặc muốn đóng góp, vui lòng liên hệ qua:
 
----
-
-Thank you for exploring the GEU\_AI\_Insurance project! Feel free to open an issue or submit a pull request on GitHub for feedback and contributions.
+- GitHub: [https://github.com/phuongnga205/GEU\_AI\_Insurance](https://github.com/phuongnga205/GEU_AI_Insurance)
+- Email: [23520992@gm.uit.edu.vn](mailto:23520992@gm.uit.edu.vn)
 
